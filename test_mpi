@@ -145,6 +145,59 @@ int main (int argc, char *argv[]) {
 
 
 
+//*************************2test
+
+#include <mpi.h>
+#include <stdio.h>
+
+#define EXTRACT_BIT(n,i) ((n&(1<<i))?1:0)
+
+/* La función se mantiene "limpia" (solo lógica) */
+int check_circuit (int z) {
+    int v[16]; 
+    int i;
+    for (i = 0; i < 16; i++) v[i] = EXTRACT_BIT(z, i);
+
+    if ((v[0] || v[1]) && (!v[1] || v[3]) && (v[2] || v[3])
+        && (v[3] || !v[4]) && (v[4] || !v[5])
+        && (v[5] || !v[6]) && (v[5] || v[6])
+        && (v[6] || !v[15]) && (v[7] || !v[8])
+        && (!v[7] || !v[13]) && (v[8] || v[9])
+        && (v[8] || !v[9]) && (!v[9] || !v[10])
+        && (v[9] || v[11]) && (v[10] || v[11])
+        && (v[12] || v[13]) && (v[13] || !v[14])
+        && (v[14] || v[15])) {
+        return 1; 
+    }
+    return 0; 
+}
+
+int main (int argc, char *argv[]) {
+    int i, j, id, p;
+    int bits[16];
+
+    MPI_Init (&argc, &argv);
+    MPI_Comm_rank (MPI_COMM_WORLD, &id);
+    MPI_Comm_size (MPI_COMM_WORLD, &p);
+
+    for (i = id; i < 65536; i += p) {
+        if (check_circuit(i)) {
+            // Convertimos i a bits para imprimir
+            for (j = 0; j < 16; j++) bits[j] = EXTRACT_BIT(i, j);
+            
+            // Imprimimos el ID y luego los bits
+            printf ("Proceso %d encontró solución: ", id);
+            for (j = 0; j < 16; j++) printf("%d", bits[j]);
+            printf (" (Decimal: %d)\n", i);
+            fflush (stdout);
+        }
+    }
+
+    MPI_Finalize ();
+    return 0;
+}
+
+
 
 
 
